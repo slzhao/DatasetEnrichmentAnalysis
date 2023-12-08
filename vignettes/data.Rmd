@@ -1,0 +1,105 @@
+---
+  title: "Vignette Title"
+  author: "Vignette Author"
+  package: PackageName
+  output: 
+    BiocStyle::html_document
+  vignette: >
+    %\VignetteIndexEntry{Vignette Title}
+    %\VignetteEngine{knitr::rmarkdown}
+    %\VignetteEncoding{UTF-8}  
+---
+
+## Protein Atlas data
+
+Downloaded from <https://www.proteinatlas.org/about/download>
+
+### normal_tissue.tsv.zip
+
+```{r,eval=FALSE}
+library(tidyverse)
+
+rawData=data.table::fread("D:\\temp\\normal_tissue.tsv")
+colnames(rawData)=make.names(colnames(rawData))
+
+dim(rawData)
+# [1] 1197500       6
+table(rawData$Level)
+#          Ascending         Descending               High                Low             Medium                N/A       Not detected Not representative 
+#                172                 73             140606             184016             303122               1835             567667                  9 
+table(rawData$Reliability)
+#  Approved  Enhanced Supported Uncertain
+#    461677    390433    162583    182807
+
+length(unique(rawData$"Gene.name"))
+#15297
+
+length(unique(rawData$"Tissue"))
+#64
+
+length(unique(rawData$"Cell.type"))
+#145
+
+```
+
+set protein levels: 0: not detected or other values, 1: low, 2: medium, 3: high
+
+```{r}
+rawData$TissueMerged=gsub(" \\d+","",rawData$Tissue)
+rawData=rawData %>% mutate(LevelNumber=as.numeric(gsub("Low","1",gsub("Medium","2",gsub("High","3",gsub("Not detected","0",gsub("N/A","0",gsub("Descending","0",gsub("Ascending","0",gsub("Not representative","0",Level))))))))),
+                           TissueMerged=gsub(" \\d+","",Tissue))
+
+rawData %>% group_by(Gene.name,TissueMerged) %>% summarise(LevelNumber=max(LevelNumber)) %>% pivot_wider(names_from = TissueMerged,values_from = LevelNumber) -> rawDataByTissue
+
+dataOut=as.data.frame(rawDataByTissue[,-1])
+row.names(dataOut)=rawDataByTissue[[1]]
+colnames(dataOut)=make.names(colnames(dataOut))
+dataOut[is.na(dataOut)]=0
+#remove too few samples
+temp=apply(dataOut,2,function(x) length(which(x>0)))
+dataOut=dataOut[,which(temp>=10)]
+saveRDS(dataOut,"D:\\temp\\proteinAtlas.normal_tissue.tsv.tissue.rds")
+
+
+rawData %>% group_by(Gene.name,Cell.type) %>% summarise(LevelNumber=max(LevelNumber)) %>% pivot_wider(names_from = Cell.type,values_from = LevelNumber) -> rawDataByCellType
+
+dataOut=as.data.frame(rawDataByCellType[,-1])
+row.names(dataOut)=rawDataByTissue[[1]]
+colnames(dataOut)=make.names(colnames(dataOut))
+dataOut[is.na(dataOut)]=0
+#remove too few samples
+temp=apply(dataOut,2,function(x) length(which(x>0)))
+dataOut=dataOut[,which(temp>=10)]
+saveRDS(dataOut,"D:\\temp\\proteinAtlas.normal_tissue.tsv.cell.rds")
+
+```
+
+### rna_tissue_consensus.tsv.zip
+
+```{r}
+
+
+rawData=data.table::fread("D:\\temp\\rna_tissue_consensus.tsv")
+colnames(rawData)=make.names(colnames(rawData))
+
+dim(rawData)
+# [1] 1000036       4
+
+table(rawData$Tissue)
+```
+
+```{r}
+rawData$logTPMPlus1=log(rawData$nTPM+1)
+
+rawData%>% group_by(Gene.name,Tissue) %>% summarise(logTPMPlus1=max(logTPMPlus1)) %>% pivot_wider(names_from = Tissue,values_from = logTPMPlus1) -> rawDataByTissue
+dataOut=as.data.frame(rawDataByTissue[,-1])
+row.names(dataOut)=rawDataByTissue[[1]]
+colnames(dataOut)=make.names(colnames(dataOut))
+dataOut[is.na(dataOut)]=0
+#remove too few samples
+temp=apply(dataOut,2,function(x) length(which(x>0)))
+dataOut=dataOut[,which(temp>=10)]
+saveRDS(dataOut,"D:\\temp\\proteinAtlas.rna_tissue_consensus.tsv.rds")
+
+```
+
