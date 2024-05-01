@@ -1,4 +1,19 @@
 dataRankTest=function(selectedGenes,referenceData,universGenes=NULL,nRep=1000,returnExpRank=FALSE,missingValue=0) {
+  referenceDataInPackage<-data(package="DatasetEnrichmentAnalysis")$results[,"Item"]
+
+  if (is.character(referenceData)) { #referenceDataInPackage
+    if (referenceData %in% referenceDataInPackage) {
+      data(list=referenceData,envir=environment())
+      referenceData<-get(referenceData,envir=environment())
+    } else {
+      stop(paste0("The referenceData name ",referenceData," is not in the dataset of DatasetEnrichmentAnalysis package"))
+    }
+  } else {
+    if (!is(referenceData, "matrix") & (!is(referenceData, "data.frame"))) {
+      stop(paste0("The referenceData is not a matrix or data.frame"))
+    }
+  }
+
   if (is.null(universGenes)) {
     universGenes=row.names(referenceData)
   }
@@ -8,8 +23,9 @@ dataRankTest=function(selectedGenes,referenceData,universGenes=NULL,nRep=1000,re
   print(paste0("Number of selected genes: ",length(selectedGenes)))
   print(paste0("Number of univers/experiment genes: ",nrow(expdata)))
 
-  expdata_norm<-abs(expdata)/(apply(expdata,1,function(x){sqrt(sum(x^2))}))
-  expdata_rank<-apply(expdata_norm,2,rank)
+  #expdata_norm<-abs(expdata)/(apply(expdata,1,function(x){sqrt(sum(x^2))}))
+  #expdata_rank<-apply(expdata_norm,2,rank)
+  expdata_rank=expdata
 
   topn_rank<-expdata_rank[rownames(expdata_rank) %in% selectedGenes,]
   topn_rank_sum<-apply(topn_rank,2,sum)
@@ -39,3 +55,13 @@ dataRankTest=function(selectedGenes,referenceData,universGenes=NULL,nRep=1000,re
 
   return(data.frame(Total=expdataCount,Selected=selectedGenesCount,p=pval,pAdj=p.adjust(pval,method="BH")))
 }
+
+
+# dataToRank=function(referenceData,universGenes=NULL) {
+#   if (is.null(universGenes)) {
+#     universGenes=row.names(referenceData)
+#   }
+#   referenceDataNormlized=abs(referenceData)/(apply(referenceData,1,function(x){sqrt(sum(x^2))}))
+#   referenceDataRank=apply(referenceDataNormlized,2,rank)
+#   return(referenceDataRank)
+# }

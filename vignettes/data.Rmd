@@ -14,6 +14,321 @@
 
 Downloaded from <https://www.proteinatlas.org/about/download>
 
+### rna_tissue_consensus.tsv.zip
+
+```{r}
+
+dataFile="D:\\temp\\rna_tissue_consensus.tsv"
+tools::md5sum(dataFile)
+#"5c99339458bcbfc5726662490e486294"
+
+rawData=data.table::fread(dataFile)
+
+colnames(rawData)=make.names(colnames(rawData))
+dim(rawData)
+# [1] 1000036       4
+
+table(rawData$Tissue)
+```
+
+```{r}
+rawData$logTPMPlus1=log(rawData$nTPM+1)
+
+rawData%>% group_by(Gene.name,Tissue) %>% summarise(logTPMPlus1=max(logTPMPlus1)) %>% pivot_wider(names_from = Tissue,values_from = logTPMPlus1) -> rawDataByTissue
+dataOut=as.data.frame(rawDataByTissue[,-1])
+row.names(dataOut)=rawDataByTissue[[1]]
+colnames(dataOut)=make.names(colnames(dataOut))
+dataOut[is.na(dataOut)]=0
+#remove too few samples
+temp=apply(dataOut,2,function(x) length(which(x>0)))
+referenceData=dataOut[,which(temp>=10)]
+
+referenceDataNormlized=abs(referenceData)/(apply(referenceData,1,function(x){sqrt(sum(x^2))}))
+referenceDataRank=apply(referenceDataNormlized,2,rank)
+
+
+#dataFileOut=paste0(dataFile,".rds")
+dataFileOut="D:\\source\\DatasetEnrichmentAnalysis\\data\\HPA_rna_tissue_consensus.rda"
+print(dataFileOut)
+#saveRDS(dataOut,dataFileOut)
+save(referenceDataRank, file=dataFileOut)
+
+tools::md5sum(dataFileOut)
+# D:\\source\\DatasetEnrichmentAnalysis\\data\\HPA_rna_tissue_consensus.rda 
+#                                        "27627203dd5be8943608df947b94fadf"
+```
+
+
+## PheWAS Result
+
+https://pheweb.sph.umich.edu/
+
+https://pheweb.org/UKB-TOPMed/top_hits
+
+```{r}
+
+dataFile="D:\\temp\\top_hits.tsv"
+tools::md5sum(dataFile)
+#"c9ceda9e28cbb2f20a3350d8c909466a"
+
+rawData=read.delim(dataFile)
+# dim(rawData)
+# [1] 55179    19
+
+length(table(rawData$nearest_genes))
+#12158
+
+length(table(rawData$phenocode))
+#1418
+
+max(rawData$pval)
+#9.9e-07
+```
+
+
+### Reformat data
+```{r}
+# #Method 1: split into multple rows by the nearest_genes column
+# split_rows <- function(df, col) {
+#   df %>%
+#     mutate_at(col, ~ strsplit(as.character(.), ",")) %>%
+#     unnest()
+# }
+# rawDataSplit <- split_rows(rawData, "nearest_genes")
+
+#Method 2: remove all "," rows
+rawDataSplit <- rawData[-grep(",",rawData$nearest_genes),]
+
+library(tidyverse)
+temp=rawDataSplit[,c("nearest_genes","phenostring","beta")] %>% pivot_wider(names_from = nearest_genes, values_from = beta,values_fn = function(x) x[which.max(abs(x))])
+dataForTest=as.matrix(temp[,-1])
+dataForTest[is.na(dataForTest)]=0
+dataForTest=t(dataForTest)
+colnames(dataForTest)=make.names(temp$phenostring)
+#row.names(dataForTest)=make.names(row.names(dataForTest))
+
+referenceData=dataForTest
+
+#saveRDS(referenceData,"D:\\temp\\UKB-TOPMed.PheWAS.top_hits.beta.rds")
+
+#remove phnotypes with too few proteins associated
+temp=(apply(referenceData,2,function(x) length(which(x!=0))))
+summary(temp)
+ # Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ #   1.00   28.00   33.00   36.37   40.00  414.00 
+referenceData=referenceData[,which(temp>=30)]
+
+referenceDataNormlized=abs(referenceData)/(apply(referenceData,1,function(x){sqrt(sum(x^2))}))
+referenceDataRank=apply(referenceDataNormlized,2,rank)
+
+
+dataFileOut="D:\\source\\DatasetEnrichmentAnalysis\\data\\UKB-TOPMed.PheWAS.top_hits.PhenoSub.beta.rda"
+save(referenceDataRank, file=dataFileOut)
+
+tools::md5sum(dataFileOut)
+# D:\\source\\DatasetEnrichmentAnalysis\\data\\UKB-TOPMed.PheWAS.top_hits.PhenoSub.beta.rda 
+#                                                        # "b669bab10360d236f375127721b6308b" 
+
+```
+
+
+## GWAS
+
+https://www.ebi.ac.uk/gwas/docs/file-downloads
+
+All associations v1.0.2 - with added ontology annotations, GWAS Catalog study accession numbers and genotyping technology
+
+```{r}
+setwd("d:\\temp\\")
+
+dataFile="D:\\temp\\gwas_catalog_v1.0.2-associations_e110_r2023-10-11.tsv"
+tools::md5sum(dataFile)
+#"dc7ce2026727d26ca29ca8c154b198d3"
+
+rawDataGWAS=data.table::fread(dataFile,quote="")
+
+colnames(rawDataGWAS)=make.names(colnames(rawDataGWAS))
+rawDataGWAS[["P.VALUE"]]=as.numeric(rawDataGWAS[["P.VALUE"]])
+
+dim(rawDataGWAS)
+#555899     38
+
+length(unique(rawDataGWAS$REPORTED.GENE.S.))
+#32432
+length(unique(rawDataGWAS$MAPPED_TRAIT))
+#10017
+
+max(rawDataGWAS[["P.VALUE"]])
+#1e-05
+
+length(which(is.na(rawDataGWAS$P.VALUE)))
+#0
+
+length(which(is.na(rawDataGWAS$OR.or.BETA)))
+#79687
+
+
+#grep, not having the expression
+GeneCleaned=rep("",nrow(rawDataGWAS))
+temp=unique(c(grep(",|-",rawDataGWAS$MAPPED_GENE),which(rawDataGWAS$MAPPED_GENE=="")))
+GeneCleaned[-temp]=rawDataGWAS$MAPPED_GENE[-temp]
+temp=unique(c(grep(",|-",rawDataGWAS$REPORTED.GENE.S.),which(rawDataGWAS$REPORTED.GENE.S.=="")))
+GeneCleaned[-temp]=rawDataGWAS$REPORTED.GENE.S.[-temp]
+length(which(GeneCleaned==""))
+#165259
+rawDataGWAS$GeneCleaned=GeneCleaned
+
+```
+
+### Filter and Reformat data
+```{r}
+pValueCut=10^-8
+rawDataGWASFilter=rawDataGWAS %>% filter(`P.VALUE`<=pValueCut)
+dim(rawDataGWASFilter)
+#396170     38
+
+nSNPCut=50
+temp=table(rawDataGWASFilter$MAPPED_TRAIT)
+rawDataGWASFilter=rawDataGWASFilter %>% filter(MAPPED_TRAIT %in% names(which(temp>=nSNPCut)))
+dim(rawDataGWASFilter)
+#348282     38
+
+range(rawDataGWASFilter$OR.or.BETA,na.rm=TRUE)
+#0 143086
+
+rawDataGWASFilter=rawDataGWASFilter %>% filter(!is.na(OR.or.BETA))
+dim(rawDataGWASFilter)
+#297575     38
+
+rawDataGWASFilter=rawDataGWASFilter %>% filter(GeneCleaned!="")
+dim(rawDataGWASFilter)
+#206232     39
+
+temp=rawDataGWASFilter[,c("GeneCleaned","MAPPED_TRAIT","OR.or.BETA")] %>% pivot_wider(names_from = GeneCleaned, values_from = OR.or.BETA,values_fn = function(x) x[which.max(abs(log(x)))])  #based on abs(log(x)) as this is OR, need to change to beta to get strongest value
+dataForTest=as.matrix(temp[,-1])
+dataForTest[dataForTest==0]=NA
+dataForTest=log(dataForTest) #log transform to change to beta
+
+dataForTest[is.na(dataForTest)]=0
+dataForTest=t(dataForTest)
+colnames(dataForTest)=make.names(temp$MAPPED_TRAIT)
+row.names(dataForTest)=make.names(row.names(dataForTest))
+
+referenceData=dataForTest
+referenceDataNormlized=abs(referenceData)/(apply(referenceData,1,function(x){sqrt(sum(x^2))}))
+referenceDataRank=apply(referenceDataNormlized,2,rank)
+
+dataFileOut="D:\\source\\DatasetEnrichmentAnalysis\\data\\gwas_catalog_beta.rda"
+save(referenceDataRank, file=dataFileOut)
+
+tools::md5sum(dataFileOut)
+# D:\\source\\DatasetEnrichmentAnalysis\\data\\gwas_catalog_beta.rda 
+#                                 "8422b6134c1a850b5822f7d96396f2c5" 
+
+```
+
+## CMap data
+https://clue.io/data/CMap2020#LINCS2020
+
+```{r}
+
+library(cmapR)
+library(data.table)
+library(tidyverse)
+
+setwd("d:\\temp\\")
+
+inforFile="D:\\temp\\siginfo_beta.txt"
+geneFile="D:\\temp\\geneinfo_beta.txt"
+
+
+inforTable=fread(inforFile)
+pert_idToTarget=inforTable[["cmap_name"]]
+names(pert_idToTarget)=inforTable[["pert_id"]]
+
+geneTable=fread(geneFile)
+geneIdToGeneSymbol=geneTable[["gene_symbol"]]
+names(geneIdToGeneSymbol)=geneTable[["gene_id"]]
+```
+
+
+
+
+```{r}
+
+dataFiles = c(
+  "D:\\temp\\level5_beta_trt_oe_n34171x12328.gctx",
+  "D:\\temp\\level5_beta_trt_xpr_n142901x12328.gctx",
+  "D:\\temp\\level5_beta_trt_cp_n720216x12328.gctx"
+)
+names(dataFiles) = c(
+  "OverExpression",
+  "CRISPR",
+  "compounds"
+  )
+
+
+for (i in seq_along(dataFiles)) {
+  dataFile=dataFiles[i]
+  dataFileName = names(dataFiles)[i]
+  #dataFile = "D:\\temp\\level5_beta_trt_oe_n34171x12328.gctx"
+  
+  print(tools::md5sum(dataFile))
+  #"a068e259e2d71676e8fa46a2d7a2de86"
+  my_ds <- parse_gctx(dataFile)
+  #my_ds@mat
+  
+  sampleMetadata = sapply(strsplit(colnames(my_ds@mat), ":"), function(x)
+    x[1])
+  targetMetaData = sapply(strsplit(colnames(my_ds@mat), ":"), function(x)
+    x[2])
+  
+  rawData = my_ds@mat
+  #gene to genesymobl IDs
+  (which(duplicated(geneIdToGeneSymbol[rownames(rawData)]))) #5131
+  geneIdToGeneSymbol[rownames(rawData)[5131]] #"MIA2"
+  geneIdToGeneSymbol[which(geneIdToGeneSymbol == "MIA2")]
+  # 117153   4253
+  # "MIA2" "MIA2"
+  
+  
+  rawDataProcessed = rawData[-(which(duplicated(geneIdToGeneSymbol[rownames(rawData)]))), ]
+  row.names(rawDataProcessed) = geneIdToGeneSymbol[rownames(rawDataProcessed)]
+  
+  #merge for the same target
+  
+  targetMetaDataToGene = (pert_idToTarget[targetMetaData])
+  
+  #average columns in rawDataProcessed by targetMetaDataToGene
+  referenceData = t(apply(rawDataProcessed, 1, function(x)
+    tapply(x, targetMetaDataToGene, mean, na.rm = TRUE)))
+  print(nrow(referenceData))
+  #12327 genes
+  print(ncol(referenceData))
+  #3460 Overexpression
+  colnames(referenceData) = paste0(dataFileName,"_", colnames(referenceData))
+  
+  dataFileOut=paste0("D:\\source\\DatasetEnrichmentAnalysis\\data\\CMAPLINCS_",dataFileName,".rda")
+  print(dataFileOut)
+  
+  referenceDataRank=apply(referenceData,2,rank)
+
+  #save(referenceData, file=dataFileOut)
+  save(referenceDataRank, file=dataFileOut)
+
+  print(tools::md5sum(dataFileOut))
+  # D:\\source\\DatasetEnrichmentAnalysis\\data\\CMAPLINCS_CRISPR.rda 
+  #                              "132f2377cf06bd1e19143268a2f4aca6" 
+}
+
+
+
+
+```
+
+
+
+## Protein Atlas data: Not included currently
 ### normal_tissue.tsv.zip
 
 ```{r,eval=FALSE}
@@ -71,35 +386,6 @@ dataOut[is.na(dataOut)]=0
 temp=apply(dataOut,2,function(x) length(which(x>0)))
 dataOut=dataOut[,which(temp>=10)]
 saveRDS(dataOut,"D:\\temp\\proteinAtlas.normal_tissue.tsv.cell.rds")
-
-```
-
-### rna_tissue_consensus.tsv.zip
-
-```{r}
-
-
-rawData=data.table::fread("D:\\temp\\rna_tissue_consensus.tsv")
-colnames(rawData)=make.names(colnames(rawData))
-
-dim(rawData)
-# [1] 1000036       4
-
-table(rawData$Tissue)
-```
-
-```{r}
-rawData$logTPMPlus1=log(rawData$nTPM+1)
-
-rawData%>% group_by(Gene.name,Tissue) %>% summarise(logTPMPlus1=max(logTPMPlus1)) %>% pivot_wider(names_from = Tissue,values_from = logTPMPlus1) -> rawDataByTissue
-dataOut=as.data.frame(rawDataByTissue[,-1])
-row.names(dataOut)=rawDataByTissue[[1]]
-colnames(dataOut)=make.names(colnames(dataOut))
-dataOut[is.na(dataOut)]=0
-#remove too few samples
-temp=apply(dataOut,2,function(x) length(which(x>0)))
-dataOut=dataOut[,which(temp>=10)]
-saveRDS(dataOut,"D:\\temp\\proteinAtlas.rna_tissue_consensus.tsv.rds")
 
 ```
 
