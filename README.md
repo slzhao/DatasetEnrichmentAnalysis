@@ -68,13 +68,13 @@ c.   COSMIC: [ABL1 Gene  - Somatic Mutations in Cancer (sanger.ac.uk)](https://c
 
 ### Reference Data
 
-| Name                                     | Source         | Notes                             |
-|------------------------------|-----------------|-------------------------|
-| HPA_rna_tissue_consensus                 | HPA            | Tissue level gene expression data |
-| CMAPLINCS_CRISPR                         | CMAP           | CMAP knockout                     |
-| CMAPLINCS_OverExpression                 | CMAP           | CMAP OverExpression               |
-| gwas_catalog_beta                        | gwas catalog   | gwas catalog beta value           |
-| UKB-TOPMed.PheWAS.top_hits.PhenoSub.beta | PheWAS catalog | PheWAS catalog beta value         |
+| Name                              | Source         | Notes                             |
+|-----------------------------|------------------|-------------------------|
+| HPA_rna_tissue_consensus          | HPA            | Tissue level gene expression data |
+| CMAPLINCS_CRISPR                  | CMAP           | CMAP knockout                     |
+| CMAPLINCS_OverExpression          | CMAP           | CMAP OverExpression               |
+| gwas_catalog_beta                 | gwas catalog   | gwas catalog beta value           |
+| UKB.PheWAS.top_hits.PhenoSub.beta | PheWAS catalog | PheWAS catalog beta value         |
 
 ### Example
 
@@ -89,7 +89,7 @@ selectedGenes=c("CARMIL1" ,   "HLA-B" ,     "PLCD1",      "WNT7B" ,     "HFE" ,
 testResult=dataRankTest(selectedGenes,referenceData="HPA_rna_tissue_consensus",nRep=1000)
 #testResult=dataRankTest(selectedGenes,referenceData="CMAPLINCS_CRISPR",nRep=1000)
 #testResult=dataRankTest(selectedGenes,referenceData="gwas_catalog_beta",nRep=1000)
-#testResult=dataRankTest(selectedGenes,referenceData="UKB-TOPMed.PheWAS.top_hits.PhenoSub.beta",nRep=1000)
+#testResult=dataRankTest(selectedGenes,referenceData="UKB.PheWAS.top_hits.PhenoSub.beta",nRep=1000)
 
 library(tidyverse)
 head(testResult %>% arrange(pAdj))

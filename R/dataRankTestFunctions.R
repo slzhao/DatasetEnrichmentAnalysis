@@ -6,7 +6,7 @@ dataRankTest=function(selectedGenes,referenceData,universGenes=NULL,nRep=1000,re
   if (is.character(referenceData)) { #referenceDataInPackage
     if (referenceData %in% referenceDataInPackage) {
       data(list=referenceData,envir=environment()) #get referenceDataRank
-      #referenceData<-get(referenceDataName,envir=environment())
+      referenceDataRank<-get(referenceData,envir=environment())
     } else {
       stop(paste0("The referenceData name ",referenceData," is not in the dataset of DatasetEnrichmentAnalysis package"))
     }

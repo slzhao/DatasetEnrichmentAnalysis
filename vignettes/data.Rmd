@@ -10,6 +10,13 @@
     %\VignetteEncoding{UTF-8}  
 ---
 
+```{r}
+library(tidyverse)
+```
+
+
+
+
 ## Protein Atlas data
 
 Downloaded from <https://www.proteinatlas.org/about/download>
@@ -51,7 +58,9 @@ referenceDataRank=apply(referenceDataNormlized,2,rank)
 dataFileOut="D:\\source\\DatasetEnrichmentAnalysis\\data\\HPA_rna_tissue_consensus.rda"
 print(dataFileOut)
 #saveRDS(dataOut,dataFileOut)
-save(referenceDataRank, file=dataFileOut)
+
+HPA_rna_tissue_consensus=referenceDataRank
+save(HPA_rna_tissue_consensus, file=dataFileOut,compression_level = 9)
 
 tools::md5sum(dataFileOut)
 # D:\\source\\DatasetEnrichmentAnalysis\\data\\HPA_rna_tissue_consensus.rda 
@@ -122,11 +131,12 @@ referenceDataNormlized=abs(referenceData)/(apply(referenceData,1,function(x){sqr
 referenceDataRank=apply(referenceDataNormlized,2,rank)
 
 
-dataFileOut="D:\\source\\DatasetEnrichmentAnalysis\\data\\UKB-TOPMed.PheWAS.top_hits.PhenoSub.beta.rda"
-save(referenceDataRank, file=dataFileOut)
+dataFileOut="D:\\source\\DatasetEnrichmentAnalysis\\data\\UKB.PheWAS.top_hits.PhenoSub.beta.rda"
+UKB.PheWAS.top_hits.PhenoSub.beta=referenceDataRank
+save(UKB.PheWAS.top_hits.PhenoSub.beta, file=dataFileOut,compression_level = 9)
 
 tools::md5sum(dataFileOut)
-# D:\\source\\DatasetEnrichmentAnalysis\\data\\UKB-TOPMed.PheWAS.top_hits.PhenoSub.beta.rda 
+# D:\\source\\DatasetEnrichmentAnalysis\\data\\UKB.PheWAS.top_hits.PhenoSub.beta.rda 
 #                                                        # "b669bab10360d236f375127721b6308b" 
 
 ```
@@ -219,7 +229,8 @@ referenceDataNormlized=abs(referenceData)/(apply(referenceData,1,function(x){sqr
 referenceDataRank=apply(referenceDataNormlized,2,rank)
 
 dataFileOut="D:\\source\\DatasetEnrichmentAnalysis\\data\\gwas_catalog_beta.rda"
-save(referenceDataRank, file=dataFileOut)
+gwas_catalog_beta=referenceDataRank
+save(gwas_catalog_beta, file=dataFileOut)
 
 tools::md5sum(dataFileOut)
 # D:\\source\\DatasetEnrichmentAnalysis\\data\\gwas_catalog_beta.rda 
@@ -257,14 +268,14 @@ names(geneIdToGeneSymbol)=geneTable[["gene_id"]]
 ```{r}
 
 dataFiles = c(
-  "D:\\temp\\level5_beta_trt_oe_n34171x12328.gctx",
-  "D:\\temp\\level5_beta_trt_xpr_n142901x12328.gctx",
-  "D:\\temp\\level5_beta_trt_cp_n720216x12328.gctx"
+  #  "D:\\temp\\level5_beta_trt_oe_n34171x12328.gctx",
+  "D:\\temp\\level5_beta_trt_xpr_n142901x12328.gctx"
+#  "D:\\temp\\level5_beta_trt_cp_n720216x12328.gctx"
 )
 names(dataFiles) = c(
-  "OverExpression",
-  "CRISPR",
-  "compounds"
+#  "OverExpression",
+  "CRISPR"
+#  "compounds"
   )
 
 
@@ -314,7 +325,9 @@ for (i in seq_along(dataFiles)) {
   referenceDataRank=apply(referenceData,2,rank)
 
   #save(referenceData, file=dataFileOut)
-  save(referenceDataRank, file=dataFileOut)
+  
+  CMAPLINCS_CRISPR=referenceDataRank
+  save(CMAPLINCS_CRISPR, file=dataFileOut)
 
   print(tools::md5sum(dataFileOut))
   # D:\\source\\DatasetEnrichmentAnalysis\\data\\CMAPLINCS_CRISPR.rda 
