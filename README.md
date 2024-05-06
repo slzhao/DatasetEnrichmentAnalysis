@@ -69,7 +69,7 @@ c.   COSMIC: [ABL1 Gene  - Somatic Mutations in Cancer (sanger.ac.uk)](https://c
 ### Reference Data
 
 | Name                                     | Source         | Notes                             |
-|------------------------------------------|----------------|-----------------------------------|
+|------------------------------|-----------------|-------------------------|
 | HPA_rna_tissue_consensus                 | HPA            | Tissue level gene expression data |
 | CMAPLINCS_CRISPR                         | CMAP           | CMAP knockout                     |
 | CMAPLINCS_OverExpression                 | CMAP           | CMAP OverExpression               |
@@ -80,12 +80,16 @@ c.   COSMIC: [ABL1 Gene  - Somatic Mutations in Cancer (sanger.ac.uk)](https://c
 
 ``` r
 library(DatasetEnrichmentAnalysis)
-data(HPA_rna_tissue_consensus)
 
-
-selectedGenes=c("CARMIL1" ,   "HLA-B" ,     "PLCD1",      "WNT7B" ,     "HFE" ,       "F5" ,        "ABCG8"  ,  "PITX2"  ,    "HLA-C" ,     "HLA-DQB1",   "HLA-DRB1",   "TCF7L2"  , "IRF4"  ,     "AL359922.1","APOE"   ,    "HLA-DQA1" ,  "HLA-DRB5" ,  "PTPN22" ,    "SFRP4"   , "CASZ1"  )
+selectedGenes=c("CARMIL1" ,   "HLA-B" ,     "PLCD1",      "WNT7B" ,     "HFE" ,     
+"F5" ,        "ABCG8"  ,  "PITX2"  ,    "HLA-C" ,     "HLA-DQB1",   "HLA-DRB1",  
+"TCF7L2"  , "IRF4"  ,     "AL359922.1","APOE"   ,    "HLA-DQA1" ,  "HLA-DRB5" ,  
+"PTPN22" ,    "SFRP4"   , "CASZ1"  )
 
 testResult=dataRankTest(selectedGenes,referenceData="HPA_rna_tissue_consensus",nRep=1000)
+#testResult=dataRankTest(selectedGenes,referenceData="CMAPLINCS_CRISPR",nRep=1000)
+#testResult=dataRankTest(selectedGenes,referenceData="gwas_catalog_beta",nRep=1000)
+#testResult=dataRankTest(selectedGenes,referenceData="UKB-TOPMed.PheWAS.top_hits.PhenoSub.beta",nRep=1000)
 
 library(tidyverse)
 head(testResult %>% arrange(pAdj))

@@ -1,24 +1,27 @@
 dataRankTest=function(selectedGenes,referenceData,universGenes=NULL,nRep=1000,returnExpRank=FALSE,missingValue=0) {
   referenceDataInPackage<-data(package="DatasetEnrichmentAnalysis")$results[,"Item"]
+  referenceDataInPackage=gsub("^referenceDataRank \\(","",referenceDataInPackage)
+  referenceDataInPackage=gsub("\\)$","",referenceDataInPackage)
 
   if (is.character(referenceData)) { #referenceDataInPackage
     if (referenceData %in% referenceDataInPackage) {
-      data(list=referenceData,envir=environment())
-      referenceData<-get(referenceData,envir=environment())
+      data(list=referenceData,envir=environment()) #get referenceDataRank
+      #referenceData<-get(referenceDataName,envir=environment())
     } else {
       stop(paste0("The referenceData name ",referenceData," is not in the dataset of DatasetEnrichmentAnalysis package"))
     }
   } else {
-    if (!is(referenceData, "matrix") & (!is(referenceData, "data.frame"))) {
+    if (!is(referenceDataName, "matrix") & (!is(referenceData, "data.frame"))) {
       stop(paste0("The referenceData is not a matrix or data.frame"))
     }
+    referenceDataRank=referenceData
   }
 
   if (is.null(universGenes)) {
-    universGenes=row.names(referenceData)
+    universGenes=row.names(referenceDataRank)
   }
   selectedGenes=intersect(selectedGenes,universGenes)
-  expdata=referenceData[intersect(row.names(referenceData),universGenes),]
+  expdata=referenceDataRank[intersect(row.names(referenceDataRank),universGenes),]
 
   print(paste0("Number of selected genes: ",length(selectedGenes)))
   print(paste0("Number of univers/experiment genes: ",nrow(expdata)))
